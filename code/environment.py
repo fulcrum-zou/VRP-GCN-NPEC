@@ -19,13 +19,13 @@ class Environment:
 
     def get_state(self):
         '''
-        :return: customer coordinates and demand, vehicle states
+        @return: customer coordinates and demand, vehicle states
         '''
 
     def step(self, action):
         ''' update customer and vehicle states
-        :param action:
-        :return: reward
+        @param action:
+        @return: reward
         '''
 
     def mask(self):
@@ -34,7 +34,7 @@ class Environment:
 
     def get_reward(self, state, action):
         '''
-        :param state:
-        :param action:
-        :return: routing distance after the action
+        @param state:
+        @param action:
+        @return: routing distance after the action
         '''
