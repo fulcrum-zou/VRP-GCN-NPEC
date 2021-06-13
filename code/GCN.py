@@ -24,12 +24,20 @@ class GCN(nn.Module()):
         self.W4 = nn.Linear(1, self.edge_hidden_dim // 2) # edge_W4
         self.W5 = nn.Linear(1, self.edge_hidden_dim // 2) # edge_W5
         
-        self.node_embedding = nn.Linear(self.node_hidden_dim, self.node_hidden_dim, bias=False)
-        self.edge_embedding = nn.Linear(self.edge_hidden_dim, self.edge_hidden_dim, bias=False)
+        self.node_embedding = nn.Linear(self.node_hidden_dim, self.node_hidden_dim, bias=False) # Eq5
+        self.edge_embedding = nn.Linear(self.edge_hidden_dim, self.edge_hidden_dim, bias=False) # Eq6
 
         self.gcn_layers = nn.ModuleList([GCNLayer(self.node_hidden_dim) for i in range(self.gcn_num_layers)])
         
         self.relu = nn.ReLU()
+
+    def forward(self, x_c, x_d, m):
+        '''
+        @param x_c: coordination(batch_size, node_num(N+1), 2)
+        @param x_d: demand(batch_size, node_num(N+1), 1)
+        @param m: (batch_size, node_num(N+1), node_num(N+1))
+        '''
+        
 
 class GCNLayer(nn.Module()):
     def __init__(self, hidden_dim):
@@ -59,6 +67,11 @@ class GCNLayer(nn.Module()):
 
 
     def forward(self, x, e, neighbor_index):
+        '''
+        @param x: (batch_size, node_num(N+1), node_hidden_dim)
+        @param e: (batch_size, node_num(N+1), node_num(N+1), edge_hidden_dim)
+        @param neighbor_index: (batch_size, k)
+        '''
         # node embedding
         batch_size, node_num = x.size[0], x.size[1]
         node_hidden_dim = x.size[-1]
