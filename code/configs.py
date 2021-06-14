@@ -7,7 +7,7 @@ device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('
 
 node_hidden_dim = 100
 edge_hidden_dim = 100
-gcn_num_layers = 3
+gcn_num_layers = 1
 
 batch_size = 32
 node_num = 20          # number of customers
