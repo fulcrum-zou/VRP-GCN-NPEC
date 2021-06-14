@@ -2,5 +2,4 @@ resources
 
 dataset
 
-.ipynb
-*/.ipynb
+*.ipynb
