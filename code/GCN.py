@@ -1,18 +1,19 @@
 from configs import *
 import torch.nn as nn
+import numpy as np
 
-class GCN(nn.Module()):
+class GCN(nn.Module):
     def __init__(self,
-                 node_input_dim,
-                 edge_input_dim,
+                #  node_input_dim,
+                #  edge_input_dim,
                  node_hidden_dim,
                  edge_hidden_dim,
                  gcn_num_layers,
                  k):
         super(GCN, self).__init__()
 
-        self.node_input_dim = node_input_dim
-        self.edge_input_dim = edge_input_dim
+        # self.node_input_dim = node_input_dim
+        # self.edge_input_dim = edge_input_dim
         self.node_hidden_dim = node_hidden_dim
         self.edge_hidden_dim = edge_hidden_dim
         self.gcn_num_layers = gcn_num_layers
@@ -27,19 +28,43 @@ class GCN(nn.Module()):
         self.node_embedding = nn.Linear(self.node_hidden_dim, self.node_hidden_dim, bias=False) # Eq5
         self.edge_embedding = nn.Linear(self.edge_hidden_dim, self.edge_hidden_dim, bias=False) # Eq6
 
-        self.gcn_layers = nn.ModuleList([GCNLayer(self.node_hidden_dim) for i in range(self.gcn_num_layers)])
+        # self.gcn_layers = nn.ModuleList([GCNLayer(self.node_hidden_dim) for i in range(self.gcn_num_layers)])
         
         self.relu = nn.ReLU()
 
+    def adjacency(self, m):
+        '''
+        @param m: distance (node_num, node_num)
+        '''
+        a = torch.zeros_like(m)
+        idx = torch.argsort(m, dim=1)[:, :self.k]
+        a.scatter_(1, idx, 1)
+        a.fill_diagonal_(-1)
+
+        return a
+
     def forward(self, x_c, x_d, m):
         '''
-        @param x_c: coordination(batch_size, node_num(N+1), 2)
-        @param x_d: demand(batch_size, node_num(N+1), 1)
-        @param m: (batch_size, node_num(N+1), node_num(N+1))
+        @param x_c: coordination (batch_size, node_num(N+1), 2)
+        @param x_d: demand (batch_size, node_num(N+1))
+        @param m: distance (batch_size, node_num(N+1), node_num(N+1))
         '''
-        
+        # Eq 2
+        x0 = self.relu(self.W1(x_c[:, :1, :])) # (batch_size, 1, node_hidden_dim)
+        xi = self.relu(torch.cat((self.W2(x_c[:, 1:, :]), self.W3(x_d.unsqueeze(2)[:, 1:, :])), dim=-1)) # (batch_size, node_num(N), node_hidden_dim)
+        x = torch.cat((x0, xi), dim=1)
+        print('x:', x.shape)
+        # Eq 3
+        a = torch.Tensor([self.adjacency(m[i, :, :]).numpy() for i in range(m.shape[0])])
+        # Eq 4
+        y = self.relu(torch.cat((self.W4(m.unsqueeze(3)), self.W5(a.unsqueeze(3))), dim=-1))
+        print('y:', y.shape)
+        # Eq 5
+        h_node = self.node_embedding(x)
+        # Eq 6
+        h_edge = self.edge_embedding(y)
 
-class GCNLayer(nn.Module()):
+class GCNLayer(nn.Module):
     def __init__(self, hidden_dim):
         super(GCNLayer, self).__init__()
 
