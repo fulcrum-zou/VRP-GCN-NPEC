@@ -1,4 +1,5 @@
 from configs import *
+from attention import *
 import torch.nn as nn
 import numpy as np
 
@@ -28,7 +29,7 @@ class GCN(nn.Module):
         self.node_embedding = nn.Linear(self.node_hidden_dim, self.node_hidden_dim, bias=False) # Eq5
         self.edge_embedding = nn.Linear(self.edge_hidden_dim, self.edge_hidden_dim, bias=False) # Eq6
 
-        # self.gcn_layers = nn.ModuleList([GCNLayer(self.node_hidden_dim) for i in range(self.gcn_num_layers)])
+        self.gcn_layers = nn.ModuleList([GCNLayer(self.node_hidden_dim) for i in range(self.gcn_num_layers)])
         
         self.relu = nn.ReLU()
 
@@ -37,11 +38,21 @@ class GCN(nn.Module):
         @param m: distance (node_num, node_num)
         '''
         a = torch.zeros_like(m)
-        idx = torch.argsort(m, dim=1)[:, :self.k]
+        idx = torch.argsort(m, dim=1)[:, 1:(self.k+1)]
         a.scatter_(1, idx, 1)
         a.fill_diagonal_(-1)
 
         return a
+
+    def find_neighbors(self, m):
+        ''' find index of neighbors for each node
+        @param m: distance (batch_size, node_num, node_num)
+        '''
+        neighbor_idx = []
+        for i in range(m.shape[0]):
+            idx = torch.argsort(m[i, :, :], dim=1)[:, 1:(self.k+1)].numpy()
+            neighbor_idx.append(idx)
+        return torch.LongTensor(neighbor_idx)
 
     def forward(self, x_c, x_d, m):
         '''
@@ -63,6 +74,15 @@ class GCN(nn.Module):
         h_node = self.node_embedding(x)
         # Eq 6
         h_edge = self.edge_embedding(y)
+
+        # index of neighbors
+        N = self.find_neighbors(m)
+        print('N:', N.shape)
+
+        # GCN layers
+        for gcn_layer in self.gcn_layers:
+            h_node, h_edge = gcn_layer(h_node, h_edge, N)
+
 
 class GCNLayer(nn.Module):
     def __init__(self, hidden_dim):
@@ -90,16 +110,15 @@ class GCNLayer(nn.Module):
 
         self.hidden_dim = hidden_dim
 
-
     def forward(self, x, e, neighbor_index):
         '''
         @param x: (batch_size, node_num(N+1), node_hidden_dim)
         @param e: (batch_size, node_num(N+1), node_num(N+1), edge_hidden_dim)
-        @param neighbor_index: (batch_size, k)
+        @param neighbor_index: (batch_size, node_num(N+1), k)
         '''
         # node embedding
-        batch_size, node_num = x.size[0], x.size[1]
-        node_hidden_dim = x.size[-1]
+        batch_size, node_num = x.size(0), x.size(1)
+        node_hidden_dim = x.size(-1)
         t = x.unsqueeze(1).repeat(1, node_num, 1, 1)
 
         neighbor_index = neighbor_index.unsqueeze(3).repeat(1, 1, 1, node_hidden_dim)
