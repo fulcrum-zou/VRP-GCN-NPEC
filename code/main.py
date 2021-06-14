@@ -27,4 +27,4 @@ for i, item in enumerate(train_loader):
     break
 
 model = GCN(node_hidden_dim, edge_hidden_dim, gcn_num_layers, k)
-model.forward(graph, demand, distance)
+model(graph, demand, distance)
