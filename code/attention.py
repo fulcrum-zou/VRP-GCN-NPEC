@@ -24,4 +24,10 @@ class AttentionEncoder(nn.Module):
         agg = x.squeeze(2) + torch.sum(weighted_neighbor, dim=-1)
         
         return agg
-        
+
+class AttentionPointer(nn.Module):
+    def __init__(self, hidden_dim, use_tanh=True, use_cuda=True):
+        super(AttentionPointer, self).__init__()
+        self.hidden_dim = hidden_dim
+        self.use_tanh = use_tanh
+        self.use_cuda = use_cuda
