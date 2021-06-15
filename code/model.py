@@ -28,7 +28,7 @@ class Model(nn.Module):
         batch_size, node_num, node_hidden_dim = h_node.shape
 
         # sequencial decoder
-        last_node = torch.zeros((batch_size, 1))
+        last_node = torch.zeros((batch_size, 1)).long()
         hidden = torch.zeros((2, batch_size, node_hidden_dim))
         mask = torch.zeros((batch_size, node_num), dtype=torch.bool)
         mask[:, 0] = True

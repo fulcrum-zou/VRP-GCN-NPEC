@@ -24,9 +24,9 @@ class SequencialDecoder(nn.Module):
         @param mask: (batch_size, node_num)
         '''
         batch_size = x.size(0)
-        batch_idx = torch.arange(start=0, end=batch_size).unsqueeze(1).cuda()
+        batch_idx = torch.arange(start=0, end=batch_size).unsqueeze(1)
         last_x = x[batch_idx, last_node].permute(1, 0, 2)
-        _, hidden = self.gru(input=last_x, h_0=hidden)
+        _, hidden = self.gru(last_x, hidden)
         z = hidden[-1]
         
         _, u = self.pointer(z, x.permute(1, 0, 2))
