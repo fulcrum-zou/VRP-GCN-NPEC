@@ -125,13 +125,17 @@ class GCNLayer(nn.Module):
         neighbor = t.gather(2, neighbor_index)
         neighbor = neighbor.view(batch_size, node_num, -1, node_hidden_dim)
         
+        # Eq 7/9
         h_nb_node = self.ln1_node(x + self.relu(self.W_node(self.attn(x, neighbor))))
+        # Eq 12, Eq 8
         h_node = self.ln2_node(h_nb_node + self.relu(self.V_node(torch.cat([self.V_node_in(x), h_nb_node], dim=-1))))
 
         # edge embedding
         x_from = x.unsqueeze(2).repeat(1, 1, node_num, 1)
         x_to = x.unsqueeze(1).repeat(1, node_num, 1, 1)
+        # Eq 7/10, Eq 11
         h_nb_edge = self.ln1_edge(e + self.relu(self.W_edge(self.W1_edge(e) + self.W2_edge(x_from) + self.W3_edge(x_to))))
+        # Eq 13, Eq 8
         h_edge = self.ln2_edge(h_nb_edge + self.relu(self.V_edge(torch.cat((self.V_edge_in(e), h_nb_edge), dim=-1))))
 
         return h_node, h_edge
