@@ -5,16 +5,12 @@ import numpy as np
 
 class GCN(nn.Module):
     def __init__(self,
-                #  node_input_dim,
-                #  edge_input_dim,
                  node_hidden_dim,
                  edge_hidden_dim,
                  gcn_num_layers,
                  k):
         super(GCN, self).__init__()
 
-        # self.node_input_dim = node_input_dim
-        # self.edge_input_dim = edge_input_dim
         self.node_hidden_dim = node_hidden_dim
         self.edge_hidden_dim = edge_hidden_dim
         self.gcn_num_layers = gcn_num_layers
@@ -64,12 +60,10 @@ class GCN(nn.Module):
         x0 = self.relu(self.W1(x_c[:, :1, :])) # (batch_size, 1, node_hidden_dim)
         xi = self.relu(torch.cat((self.W2(x_c[:, 1:, :]), self.W3(x_d.unsqueeze(2)[:, 1:, :])), dim=-1)) # (batch_size, node_num(N), node_hidden_dim)
         x = torch.cat((x0, xi), dim=1)
-        print('x:', x.shape)
         # Eq 3
         a = torch.Tensor([self.adjacency(m[i, :, :]).numpy() for i in range(m.shape[0])])
         # Eq 4
         y = self.relu(torch.cat((self.W4(m.unsqueeze(3)), self.W5(a.unsqueeze(3))), dim=-1))
-        print('y:', y.shape)
         # Eq 5
         h_node = self.node_embedding(x)
         # Eq 6
@@ -77,11 +71,12 @@ class GCN(nn.Module):
 
         # index of neighbors
         N = self.find_neighbors(m)
-        print('N:', N.shape)
 
         # GCN layers
         for gcn_layer in self.gcn_layers:
             h_node, h_edge = gcn_layer(h_node, h_edge, N)
+
+        return h_node, h_edge
 
 
 class GCNLayer(nn.Module):

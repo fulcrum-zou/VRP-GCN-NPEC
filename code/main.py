@@ -26,5 +26,5 @@ for i, item in enumerate(train_loader):
     graph, demand, distance = item[0].to(device), item[1].to(device), item[2].to(device)
     break
 
-model = GCN(node_hidden_dim, edge_hidden_dim, gcn_num_layers, k)
+model = Model(node_hidden_dim, edge_hidden_dim, gcn_num_layers, decode_type, k)
 model(graph, demand, distance)
