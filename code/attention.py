@@ -53,9 +53,8 @@ class AttentionPointer(nn.Module):
         # batch_size x hidden_dim x node_num
         expanded_q = q.repeat(1, 1, e.size(2)) 
         # batch x 1 x hidden_dim
-        v_view = self.v.unsqueeze(0).expand(
-                expanded_q.size(0), len(self.v)).unsqueeze(1)
-        # [batch_size x 1 x hidden_dim] * [batch_size x hidden_dim x node_num]
+        v_view = self.v.unsqueeze(0).expand(expanded_q.size(0), len(self.v)).unsqueeze(1)
+        # (batch_size x 1 x hidden_dim) * (batch_size x hidden_dim x node_num)
         u = torch.bmm(v_view, self.tanh(expanded_q + e)).squeeze(1)
         if self.use_tanh:
             logits = self.C * self.tanh(u)

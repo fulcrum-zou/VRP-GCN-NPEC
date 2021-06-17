@@ -28,8 +28,9 @@ class SequencialDecoder(nn.Module):
         last_x = x[batch_idx, last_node].permute(1, 0, 2)
         _, hidden = self.gru(last_x, hidden)
         z = hidden[-1]
-        
+        # Eq 15
         _, u = self.pointer(z, x.permute(1, 0, 2))
+        # Eq 16
         u = u.masked_fill_(mask, -np.inf)
         probs = self.softmax(u)
         if self.decode_type == 'sample':

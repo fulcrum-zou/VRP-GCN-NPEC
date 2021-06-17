@@ -33,6 +33,6 @@ class Model(nn.Module):
         mask = torch.zeros((batch_size, node_num), dtype=torch.bool)
         mask[:, 0] = True
         ind, probability, hidden = self.sequencialDecoder(h_node, last_node, hidden, mask)
-        
+
         # classification decoder
         clf_out = self.classificationDecoder(h_edge)
