@@ -1,5 +1,6 @@
 from configs import *
 from model import *
+from copy import deepcopy
 
 class Environment:
     def __init__(self, graph, demand, distance):
@@ -31,8 +32,12 @@ class Environment:
         visited[:, 0] = True
         routes = torch.full((self.batch_size, 1), 0)
         remaining_capacity = torch.full(size=(self.batch_size, 1), fill_value=self.initial_capacity, dtype=torch.float)
-        remaining_demands = torch.FloatTensor(self.demand)
+        remaining_demands = self.demand.clone().float()
         return visited, routes, remaining_capacity, remaining_demands
+
+    def reset(self):
+        self.visited, self.routes, self.remaining_capacity, self.remaining_demands = self.init_state()
+        self.time_step = 0
 
     def step(self, action):
         ''' update customer and vehicle states
@@ -47,7 +52,7 @@ class Environment:
         '''
         action = action.squeeze(-1)
         # 1.
-        self.visited[:,action] = True
+        self.visited.scatter_(1, action.unsqueeze(1), True)
         # 2.
         self.routes = torch.cat((self.routes, action.unsqueeze(1)), dim=1)
         # 3.
@@ -56,11 +61,11 @@ class Environment:
         self.remaining_capacity[action==0] = self.initial_capacity
         self.remaining_capacity[action!=0] = torch.maximum(torch.zeros(self.batch_size, 1), prev_capacity[action!=0] - curr_demands[action!=0])
         # 4.
-        self.remaining_demands[:,action] = 0
+        self.remaining_demands.scatter_(1, action.unsqueeze(1), 0)
         # 5.
-        self.time_step += 1
+        self.time_step = self.time_step + 1
 
-    def mask(self, last_mask):
+    def get_mask(self, last_mask):
         ''' compute the mask for current states
         @param last_mask: (batch_size, node_num+1)
         1. if remaining_demands[idx] == 0 or
@@ -68,7 +73,7 @@ class Environment:
         2. if last_idx == 0 or t == 1: set the warehouse mask True
         3. if mask is all True: set the warehouse mask False
         '''
-        mask = last_mask
+        mask = last_mask.clone()
         # 1.
         mask[self.remaining_demands==0] = True
         mask[self.remaining_demands>self.remaining_capacity] = True
@@ -78,11 +83,48 @@ class Environment:
         mask[self.routes[:, -2]==0, 0] = True
         # 3.
         mask[mask.all(dim=1), 0] = False
-        print(mask)
         return mask
 
-    def get_reward(self, action):
+    def dist_per_step(self, prev_step, curr_step):
         '''
-        @param action: (batch_size, 1)
-        @return: routing distance after the action
+        @param prev_step: (batch_size, 1)
+        @param curr_step: (batch_size, 1)
+        @return: distance of single step (batch_size, 1)
         '''
+        idx = torch.arange(start=0, end=batch_size, step=1).unsqueeze(1)
+        reward = self.distance[idx, prev_step, curr_step]
+        return reward
+
+    def get_reward(self):
+        '''
+        @return: routing distance after last action (batch_size, 1)
+        '''
+        prev_step = self.routes[:, -2:-1]
+        curr_step = self.routes[:, -1:]
+        reward = self.dist_per_step(prev_step, curr_step)
+        return reward
+
+    def calc_distance(self):
+        '''
+        @return: total distance of the routes (batch_size, 1)
+        '''
+        total_dist = torch.zeros(self.batch_size, 1)
+        for i in range(1, self.routes.size(-1)):
+            prev_step = self.routes[:, (i-1):i]
+            curr_step = self.routes[:, i:(i+1)]
+            dist = self.dist_per_step(prev_step, curr_step)
+            total_dist = total_dist + dist
+        return total_dist
+
+    def decode_routes(self):
+        ''' decode route sequence into a matrix
+        @return: (batch_size, node_num+1, node_num+1)
+        '''
+        matrix = torch.zeros(self.batch_size, self.node_num+1, self.node_num+1, dtype=torch.float)
+        idx = torch.arange(start=0, end=batch_size, step=1).unsqueeze(1)
+        for i in range(1, self.routes.size(-1)):
+            prev_step = self.routes[:, (i-1):i]
+            curr_step = self.routes[:, i:(i+1)]
+            matrix[idx, prev_step, curr_step] = 1
+
+        return matrix.long()
