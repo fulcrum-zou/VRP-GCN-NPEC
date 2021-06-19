@@ -4,10 +4,9 @@ import torch
 import torch.nn as nn
 
 class SequencialDecoder(nn.Module):
-    def __init__(self, hidden_dim, decode_type):
+    def __init__(self, hidden_dim):
         super(SequencialDecoder, self).__init__()
         self.hidden_dim = hidden_dim
-        self.decode_type = decode_type
 
         self.softmax = nn.Softmax(dim=1)
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_layers=2)
@@ -16,7 +15,7 @@ class SequencialDecoder(nn.Module):
         self.W = nn.Linear(2, 1)
         self.pointer = AttentionPointer(hidden_dim, use_tanh=True)
 
-    def forward(self, x, last_node, hidden, mask):
+    def forward(self, x, last_node, hidden, mask, decode_type='sample'):
         '''
         @param x: (batch_size, node_num, hidden_dim)
         @param last_node: (batch_size, 1)
@@ -33,14 +32,15 @@ class SequencialDecoder(nn.Module):
         # Eq 16
         u = u.masked_fill_(mask, -np.inf)
         probs = self.softmax(u)
-        if self.decode_type == 'sample':
+        if decode_type == 'sample':
             # SampleRollout
             idx = torch.multinomial(probs, num_samples=1)
-        elif self.decode_type == 'greedy':
+        elif decode_type == 'greedy':
             # GreedyRollout
             idx = torch.max(probs, dim=1)[1].unsqueeze(1)
-        probability = probs[batch_idx, idx].squeeze(1)
-        return idx, probability, hidden
+        prob = probs[batch_idx, idx].squeeze(1)
+
+        return idx, prob, hidden
 
 class ClassificationDecoder(nn.Module):
     def __init__(self, hidden_dim):
