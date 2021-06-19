@@ -34,11 +34,13 @@ class SequencialDecoder(nn.Module):
         u = u.masked_fill_(mask, -np.inf)
         probs = self.softmax(u)
         if self.decode_type == 'sample':
-            ind = torch.multinomial(probs, num_samples=1)
-        else:
-            ind = torch.max(probs, dim=1)[1].unsqueeze(1)
-        probability = probs[batch_idx, ind].squeeze(1)
-        return ind, probability, hidden
+            # SampleRollout
+            idx = torch.multinomial(probs, num_samples=1)
+        elif self.decode_type == 'greedy':
+            # GreedyRollout
+            idx = torch.max(probs, dim=1)[1].unsqueeze(1)
+        probability = probs[batch_idx, idx].squeeze(1)
+        return idx, probability, hidden
 
 class ClassificationDecoder(nn.Module):
     def __init__(self, hidden_dim):

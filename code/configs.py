@@ -12,5 +12,5 @@ decode_type = 'sample'
 
 batch_size = 32
 node_num = 20          # number of customers
-initial_capacity = 40  # initial capacity of vehicles
+initial_capacity = 1  # initial capacity of vehicles
 k = 10         # number of nearest neighbors
