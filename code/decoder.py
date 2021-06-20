@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 class SequencialDecoder(nn.Module):
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim, use_cuda=False):
         super(SequencialDecoder, self).__init__()
         self.hidden_dim = hidden_dim
 
@@ -13,7 +13,7 @@ class SequencialDecoder(nn.Module):
         self.tanh = nn.Tanh()
         self.h = nn.Linear(hidden_dim, 1)
         self.W = nn.Linear(2, 1)
-        self.pointer = AttentionPointer(hidden_dim, use_tanh=True)
+        self.pointer = AttentionPointer(hidden_dim, use_tanh=True, use_cuda=use_cuda)
 
     def forward(self, x, last_node, hidden, mask, decode_type='sample'):
         '''
@@ -24,6 +24,8 @@ class SequencialDecoder(nn.Module):
         '''
         batch_size = x.size(0)
         batch_idx = torch.arange(start=0, end=batch_size).unsqueeze(1)
+        if use_cuda:
+            batch_idx = batch_idx.cuda()
         last_x = x[batch_idx, last_node].permute(1, 0, 2)
         _, hidden = self.gru(last_x, hidden)
         z = hidden[-1]

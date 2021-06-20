@@ -27,7 +27,7 @@ class AttentionEncoder(nn.Module):
         return agg
 
 class AttentionPointer(nn.Module):
-    def __init__(self, hidden_dim, use_tanh=True):
+    def __init__(self, hidden_dim, use_tanh=False, use_cuda=False):
         super(AttentionPointer, self).__init__()
         self.hidden_dim = hidden_dim
         self.use_tanh = use_tanh
@@ -37,7 +37,9 @@ class AttentionPointer(nn.Module):
         self.C = 10
         self.tanh = nn.Tanh()
 
-        v = torch.FloatTensor(hidden_dim) 
+        v = torch.FloatTensor(hidden_dim)
+        if use_cuda:
+            v = v.cuda()
         self.v = nn.Parameter(v)
         self.v.data.uniform_(-(1. / math.sqrt(hidden_dim)) , 1. / math.sqrt(hidden_dim))
 

@@ -13,7 +13,7 @@ class Model(nn.Module):
 
         self.GCN = GCN(node_hidden_dim, edge_hidden_dim,
                        gcn_num_layers, k)
-        self.sequencialDecoder = SequencialDecoder(node_hidden_dim)
+        self.sequencialDecoder = SequencialDecoder(node_hidden_dim, use_cuda)
         self.classificationDecoder = ClassificationDecoder(edge_hidden_dim)
 
     def seqDecoderForward(self, env, h_node, decode_type='sample'):

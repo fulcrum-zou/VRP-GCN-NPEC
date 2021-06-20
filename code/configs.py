@@ -3,7 +3,7 @@ import torch
 file_path = '../dataset/'
 file_name = 'G-20'
 device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
-
+use_cuda = False
 
 node_hidden_dim = 100
 edge_hidden_dim = 100

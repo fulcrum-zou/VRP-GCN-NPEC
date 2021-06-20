@@ -1,4 +1,5 @@
 from configs import *
+from utils import *
 from environment import *
 from model import *
 from dataset import *
@@ -30,5 +31,9 @@ for i in range(num_epochs):
         loss.backward()
         optimizer.step()
         loss_per_epoch += loss
+
     train_loss.append(loss_per_epoch)
     print('-train loss: %.4f' %train_loss[-1])
+
+torch.save(model.state_dict(), '../result/params.pkl')
+write_loss('train_loss.txt', train_loss)
