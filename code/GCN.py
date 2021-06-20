@@ -48,7 +48,7 @@ class GCN(nn.Module):
         for i in range(m.shape[0]):
             idx = torch.argsort(m[i, :, :], dim=1)[:, 1:(self.k+1)].numpy()
             neighbor_idx.append(idx)
-        return torch.LongTensor(neighbor_idx)
+        return torch.LongTensor(neighbor_idx).to(device)
 
     def forward(self, x_c, x_d, m):
         '''
@@ -61,7 +61,7 @@ class GCN(nn.Module):
         xi = self.relu(torch.cat((self.W2(x_c[:, 1:, :]), self.W3(x_d.unsqueeze(2)[:, 1:, :])), dim=-1)) # (batch_size, node_num(N), node_hidden_dim)
         x = torch.cat((x0, xi), dim=1)
         # Eq 3
-        a = torch.Tensor([self.adjacency(m[i, :, :]).numpy() for i in range(m.shape[0])])
+        a = torch.Tensor([self.adjacency(m[i, :, :]).numpy() for i in range(m.shape[0])]).to(device)
         # Eq 4
         y = self.relu(torch.cat((self.W4(m.unsqueeze(3)), self.W5(a.unsqueeze(3))), dim=-1))
         # Eq 5

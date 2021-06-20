@@ -25,7 +25,7 @@ class SequencialDecoder(nn.Module):
         batch_size = x.size(0)
         batch_idx = torch.arange(start=0, end=batch_size).unsqueeze(1)
         if use_cuda:
-            batch_idx = batch_idx.cuda()
+            batch_idx = batch_idx.to(device)
         last_x = x[batch_idx, last_node].permute(1, 0, 2)
         _, hidden = self.gru(last_x, hidden)
         z = hidden[-1]

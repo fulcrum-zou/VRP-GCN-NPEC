@@ -19,9 +19,9 @@ class Model(nn.Module):
     def seqDecoderForward(self, env, h_node, decode_type='sample'):
         # initialize last_node, hidden, mask & reset the environment
         env.reset()
-        last_node = torch.zeros((batch_size, 1)).long()
-        hidden = torch.zeros((2, batch_size, node_hidden_dim))
-        mask = torch.zeros((batch_size, node_num+1), dtype=torch.bool)
+        last_node = torch.zeros((batch_size, 1)).long().to(device)
+        hidden = torch.zeros((2, batch_size, node_hidden_dim)).to(device)
+        mask = torch.zeros((batch_size, node_num+1), dtype=torch.bool).to(device)
         mask[:, 0] = True
         log_prob = 0
         while (env.visited == True).all() == False:

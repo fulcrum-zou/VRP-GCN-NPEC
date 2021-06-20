@@ -30,10 +30,10 @@ class Environment:
         '''
         visited = torch.zeros(self.batch_size, self.node_num+1, dtype=torch.bool)
         visited[:, 0] = True
-        routes = torch.full((self.batch_size, 1), 0)
+        routes = torch.full((self.batch_size, 1), 0, dtype=torch.long)
         remaining_capacity = torch.full(size=(self.batch_size, 1), fill_value=self.initial_capacity, dtype=torch.float)
         remaining_demands = self.demand.clone().float()
-        return visited, routes, remaining_capacity, remaining_demands
+        return visited.to(device), routes.to(device), remaining_capacity.to(device), remaining_demands.to(device)
 
     def reset(self):
         self.visited, self.routes, self.remaining_capacity, self.remaining_demands = self.init_state()
@@ -59,7 +59,7 @@ class Environment:
         prev_capacity = self.remaining_capacity
         curr_demands = self.remaining_demands.gather(1, action.unsqueeze(1))
         self.remaining_capacity[action==0] = self.initial_capacity
-        self.remaining_capacity[action!=0] = torch.maximum(torch.zeros(self.batch_size, 1), prev_capacity[action!=0] - curr_demands[action!=0])
+        self.remaining_capacity[action!=0] = torch.maximum(torch.zeros(self.batch_size, 1).to(device), prev_capacity[action!=0] - curr_demands[action!=0])
         # 4.
         self.remaining_demands.scatter_(1, action.unsqueeze(1), 0)
         # 5.
@@ -108,7 +108,7 @@ class Environment:
         '''
         @return: total distance of the routes (batch_size, 1)
         '''
-        total_dist = torch.zeros(self.batch_size, 1)
+        total_dist = torch.zeros(self.batch_size, 1).to(device)
         for i in range(1, self.routes.size(-1)):
             prev_step = self.routes[:, (i-1):i]
             curr_step = self.routes[:, i:(i+1)]
