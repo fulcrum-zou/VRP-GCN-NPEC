@@ -3,12 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
-def write_loss(file_name, loss):
+def write_loss(file_name, epoch, loss):
     file_path = '../result/' + file_name
-    f = open(file_path, 'w')
-    for item in loss:
-        f.write('%.4f\n' %item)
+    mode = 'w' if epoch == 0 else 'a'
+    f = open(file_path, mode)
+    f.write('%d %.4f\n' %(epoch, loss))
     f.close()
+
+def plot_loss(loss):
+    file_path = '../result/' + 'loss.png'
+    plt.plot(loss, color='skyblue', linewidth=1)
+    plt.title('Train Loss')
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
+    plt.savefig(file_path)
 
 def write_file(file_name, train_result, test_result):
     file_path = '../result/' + file_name

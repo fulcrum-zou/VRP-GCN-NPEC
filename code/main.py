@@ -34,8 +34,10 @@ for i in range(num_epochs):
         break
 
     train_loss.append(loss_per_epoch)
-    print('-train loss: %.4f' %train_loss[-1])
-    break
+    print('epoch: %d -train loss: %.4f' %(i, train_loss[-1]))
+    write_loss('train_loss.txt', i, train_loss[-1])
+    if i == 3:
+        break
 
 torch.save(model.state_dict(), '../result/params.pkl')
-write_loss('train_loss.txt', train_loss)
+plot_loss(train_loss)

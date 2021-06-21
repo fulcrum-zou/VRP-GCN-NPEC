@@ -11,7 +11,7 @@ class MyDataloader():
     def load_data(self, data):
         graph, demand, distance = (data[i] for i in data.files)
         dataset = TensorDataset(torch.FloatTensor(graph), torch.FloatTensor(demand), torch.FloatTensor(distance))
-        dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+        dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, drop_last=True)
         return dataloader
 
     def dataloader(self):
