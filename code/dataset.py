@@ -8,13 +8,13 @@ class MyDataloader():
         self.train = np.load(file_path + 'data/' + file_name + '-training.npz')
         self.test = np.load(file_path + 'data/' + file_name + '-testing.npz')
 
-    def load_data(self, data):
+    def load_data(self, data, shuffle=True):
         graph, demand, distance = (data[i] for i in data.files)
         dataset = TensorDataset(torch.FloatTensor(graph), torch.FloatTensor(demand), torch.FloatTensor(distance))
-        dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+        dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, drop_last=True)
         return dataloader
 
     def dataloader(self):
         train_loader = self.load_data(self.train)
-        test_loader = self.load_data(self.test)
+        test_loader = self.load_data(self.test, shuffle=False)
         return train_loader, test_loader

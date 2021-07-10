@@ -59,31 +59,32 @@ class Environment:
         prev_capacity = self.remaining_capacity
         curr_demands = self.remaining_demands.gather(1, action.unsqueeze(1))
         self.remaining_capacity[action==0] = self.initial_capacity
-        self.remaining_capacity[action!=0] = torch.maximum(torch.zeros(self.batch_size, 1).to(device), prev_capacity[action!=0] - curr_demands[action!=0])
+        self.remaining_capacity[action!=0] = torch.maximum(torch.zeros(self.batch_size, 1)[action!=0].to(device), prev_capacity[action!=0] - curr_demands[action!=0])
         # 4.
         self.remaining_demands.scatter_(1, action.unsqueeze(1), 0)
         # 5.
         self.time_step = self.time_step + 1
 
-    def get_mask(self, last_mask):
+    def get_mask(self, last_action):
         ''' compute the mask for current states
-        @param last_mask: (batch_size, node_num+1)
+        @param last_action: (batch_size, 1)
         1. if remaining_demands[idx] == 0 or
             remaining_demands[idx] >= remaining_capacity: set idx mask True
-        2. if last_idx == 0 or t == 1: set the warehouse mask True
+        2. if last_idx == 0: set the warehouse mask True
         3. if mask is all True: set the warehouse mask False
         '''
-        mask = last_mask.clone()
+        mask = self.visited.clone()
+        last_action = last_action.squeeze(-1)
         # 1.
-        mask[self.remaining_demands==0] = True
-        mask[self.remaining_demands>self.remaining_capacity] = True
+        mask[(self.remaining_demands>=self.remaining_capacity)] = True
         # 2.
-        if self.time_step == 1:
-            mask[:, 0] = True
-        mask[self.routes[:, -2]==0, 0] = True
+        mask[last_action==0, 0] = True
         # 3.
         mask[mask.all(dim=1), 0] = False
         return mask
+
+    def all_visited(self):
+        return (self.visited == True).all()
 
     def dist_per_step(self, prev_step, curr_step):
         '''

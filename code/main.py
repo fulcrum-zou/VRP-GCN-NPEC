@@ -16,6 +16,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=
 train_loss = []
 
 for i in range(num_epochs):
+    if i == 2:
+        break
     loss_per_epoch = 0
     for item in tqdm.tqdm(train_loader):
         graph, demand, distance = item[0].to(device), item[1].to(device), item[2].to(device)
@@ -31,13 +33,13 @@ for i in range(num_epochs):
         loss.backward()
         optimizer.step()
         loss_per_epoch += loss
-        break
-
+        
+    loss_per_epoch /= batch_size
     train_loss.append(loss_per_epoch)
     print('epoch: %d -train loss: %.4f' %(i, train_loss[-1]))
+    f = open('../result/train_loss.txt', 'a')
+    f.close()
     write_loss('train_loss.txt', i, train_loss[-1])
-    if i == 3:
-        break
 
-torch.save(model.state_dict(), '../result/params.pkl')
+# torch.save(model.state_dict(), '../result/params.pkl')
 plot_loss(train_loss)

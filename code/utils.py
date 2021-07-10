@@ -20,7 +20,7 @@ def plot_loss(loss):
 
 def write_file(file_name, train_result, test_result):
     file_path = '../result/' + file_name
-    f = open(file_path, 'w')
+    f = open(file_path, 'a')
     for i in range(len(train_result)):
         f.write('%.4f ' %train_result[i][0])
         f.write('%.4f\n' %train_result[i][1])
