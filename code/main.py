@@ -20,22 +20,24 @@ def train():
         sample_logprob, sample_distance, greedy_distance, target_matrix, predict_matrix = model(env)
         predict_matrix = predict_matrix.view(-1, 2)
         target_matrix = target_matrix.view(-1)
-        classification_loss = -criterion(predict_matrix.to(device), target_matrix.to(device))
+        classification_loss = criterion(predict_matrix.to(device), target_matrix.to(device))
         advantage = (sample_distance - greedy_distance).detach()
-        mean_dist_sample += torch.mean(sample_distance).item()
-        mean_dist_greedy += torch.mean(greedy_distance).item()
+        mean_dist_sample += torch.mean(sample_distance)
+        mean_dist_greedy += torch.mean(greedy_distance)
         reinforce = advantage * sample_logprob
         sequancial_loss = reinforce.sum()
         loss = alpha * sequancial_loss + beta * classification_loss
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         loss_per_epoch += loss
-        dist_per_epoch += mean_dist_sample
-        loss_per_epoch /= (batch_size * batch_num)
-        dist_per_epoch /= batch_num
-        break
+        if batch_num == 5:
+            break
+    loss_per_epoch /= (batch_size * batch_num)
+    dist_per_epoch = mean_dist_sample / batch_num
 
-    return loss_per_epoch, dist_per_epoch, (mean_dist_sample < mean_dist_greedy)
+    print('sample: %.2f greedy: %.2f' %(mean_dist_sample / batch_num, mean_dist_greedy / batch_num))
+    return loss_per_epoch, dist_per_epoch, (mean_dist_sample.sum() < mean_dist_greedy.sum())
 
 def test():
     loss_per_epoch = 0
@@ -51,18 +53,19 @@ def test():
             sample_logprob, sample_distance, greedy_distance, target_matrix, predict_matrix = model(env)
             predict_matrix = predict_matrix.view(-1, 2)
             target_matrix = target_matrix.view(-1)
-            classification_loss = -criterion(predict_matrix.to(device), target_matrix.to(device))
+            classification_loss = criterion(predict_matrix.to(device), target_matrix.to(device))
             advantage = (sample_distance - greedy_distance).detach()
-            mean_dist_sample += torch.mean(sample_distance).item()
-            mean_dist_greedy += torch.mean(greedy_distance).item()
+            mean_dist_sample += torch.mean(sample_distance)
+            mean_dist_greedy += torch.mean(greedy_distance)
             reinforce = advantage * sample_logprob
             sequancial_loss = reinforce.sum()
             loss = alpha * sequancial_loss + beta * classification_loss
             loss_per_epoch += loss
-            dist_per_epoch += mean_dist_sample
-            loss_per_epoch /= (batch_size * batch_num)
-            dist_per_epoch /= batch_num
-            break
+            if batch_num == 5:
+                break
+
+        loss_per_epoch /= (batch_size * batch_num)
+        dist_per_epoch = mean_dist_sample / batch_num
     return loss_per_epoch, dist_per_epoch
 
 
@@ -77,7 +80,7 @@ if __name__ == '__main__':
     train_dist, test_dist = [], []
 
     for i in range(num_epochs):
-        if i == 2:
+        if i == 5:
             break
         train_loss_per_epoch, train_dist_per_epoch, update = train()
         test_loss_per_epoch, test_dist_per_epoch = test()
@@ -96,4 +99,5 @@ if __name__ == '__main__':
         plot_dist(train_dist)
 
         if update:
+            print('update')
             model.sequencialDecoderGreedy.load_state_dict(model.sequencialDecoderSample.state_dict())
